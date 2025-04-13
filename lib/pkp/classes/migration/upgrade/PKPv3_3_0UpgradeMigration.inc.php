@@ -246,6 +246,13 @@ class PKPv3_3_0UpgradeMigration extends Migration {
 			$context = $contextService->get($contextId);
 			$locales = $context->getData('supportedLocales');
 
+			if (!Capsule::schema()->hasColumn('navigation_menu_items', 'url')) {
+				Capsule::schema()->table('navigation_menu_items', function (Blueprint $table) {
+					$table->string('url', 255)->nullable();
+				});
+			}
+
+
 			$navigationItems = Capsule::table('navigation_menu_items')->where('context_id', $contextId)->pluck('url', 'navigation_menu_item_id')->filter()->all();
 			foreach ($navigationItems as $navigation_menu_item_id => $url) {
 				foreach ($locales as $locale) {

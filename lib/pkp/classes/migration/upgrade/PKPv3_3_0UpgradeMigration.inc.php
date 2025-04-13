@@ -369,19 +369,7 @@ class PKPv3_3_0UpgradeMigration extends Migration
 			}
 		});
 
-		// Drop unique keys that will cause trouble while we're migrating
-		// Capsule::connection()->unprepared('DROP INDEX review_round_files_pkey ON review_round_files');
-		$databaseName = Capsule::connection()->getDatabaseName();
-
-		$indexExists = Capsule::table('information_schema.statistics')
-			->where('table_schema', $databaseName)
-			->where('table_name', 'review_round_files')
-			->where('index_name', 'review_round_files_pkey')
-			->exists();
-
-		if ($indexExists) {
-			Capsule::connection()->unprepared('DROP INDEX review_round_files_pkey ON review_round_files');
-		}
+		
 
 		// Create entry in files and revisions tables for every submission_file
 		import('lib.pkp.classes.file.FileManager');

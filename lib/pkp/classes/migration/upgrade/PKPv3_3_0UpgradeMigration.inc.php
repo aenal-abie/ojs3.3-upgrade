@@ -318,24 +318,38 @@ class PKPv3_3_0UpgradeMigration extends Migration {
 		}
 
 		// Add partial index (DBMS-specific)
+		if (Capsule::connection()->getDriverName() === 'mysql') {
+			if (Capsule::schema()->hasTable('event_log_settings')) {
+				Capsule::connection()->unprepared('DROP INDEX event_log_settings_name_value ON event_log_settings');
+			}
+		} elseif (Capsule::connection()->getDriverName() === 'pgsql') {
+			if (Capsule::schema()->hasTable('event_log_settings')) {
+				Capsule::schema()->table('event_log_settings', function (Blueprint $table) { $table->dropIndex('event_log_settings_name_value'); });
+			}
+		}
+
 		switch (Capsule::connection()->getDriverName()) {
 			case 'mysql': Capsule::connection()->unprepared('CREATE INDEX event_log_settings_name_value ON event_log_settings (setting_name(50), setting_value(150))'); break;
 			case 'pgsql': Capsule::connection()->unprepared("CREATE INDEX event_log_settings_name_value ON event_log_settings (setting_name, setting_value) WHERE setting_name IN ('fileId', 'submissionId')"); break;
 		}
 
 		// Create a new table to track files in file storage
-		Capsule::schema()->create('files', function (Blueprint $table) {
-			$table->bigIncrements('file_id');
-			$table->string('path', 255);
-			$table->string('mimetype', 255);
-		});
+		if (!Capsule::schema()->hasTable('files')) {
+			Capsule::schema()->create('files', function (Blueprint $table) {
+				$table->bigIncrements('file_id');
+				$table->string('path', 255);
+				$table->string('mimetype', 255);
+			});
+		}
 
 		// Create a new table to track submission file revisions
-		Capsule::schema()->create('submission_file_revisions', function (Blueprint $table) {
-			$table->bigIncrements('revision_id');
-			$table->unsignedBigInteger('submission_file_id');
-			$table->unsignedBigInteger('file_id');
-		});
+		if (!Capsule::schema()->hasTable('submission_file_revisions')) {
+			Capsule::schema()->create('submission_file_revisions', function (Blueprint $table) {
+				$table->bigIncrements('revision_id');
+				$table->unsignedBigInteger('submission_file_id');
+				$table->unsignedBigInteger('file_id');
+			});
+		}
 
 		// Add columns to submission_files table
 		Capsule::schema()->table('submission_files', function (Blueprint $table) {

@@ -133,14 +133,6 @@ class PKPv3_3_0UpgradeMigration extends Migration
 				WHERE p.publication_id = s.current_publication_id'
 			);
 		} else {
-
-			// Add locale column to publications if not exist
-			if (!Capsule::schema()->hasColumn('publications', 'locale')) {
-				Capsule::schema()->table('publications', function (Blueprint $table) {
-					$table->string('locale', 14)->nullable();
-				});
-			}
-
 			Capsule::table('submissions as s')
 				->join('publications as p', 'p.publication_id', '=', 's.current_publication_id')
 				->update(['s.locale' => Capsule::raw('p.locale')]);

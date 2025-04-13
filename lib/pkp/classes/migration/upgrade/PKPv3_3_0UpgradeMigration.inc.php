@@ -383,43 +383,6 @@ class PKPv3_3_0UpgradeMigration extends Migration
 			Capsule::connection()->unprepared('DROP INDEX review_round_files_pkey ON review_round_files');
 		}
 
-		// Add a new column to the submission_files table if it doesn't exist
-		if (!Capsule::schema()->hasColumn('submission_files', 'file_type')) {
-			Capsule::schema()->table('submission_files', function (Blueprint $table) {
-				$table->string('file_type', 255)->nullable();
-			});
-		}
-
-		// Add a new column to the submission_files table if it doesn't exist
-		if (!Capsule::schema()->hasColumn('submission_files', 'date_uploaded')) {
-			Capsule::schema()->table('submission_files', function (Blueprint $table) {
-				$table->datetime('date_uploaded')->nullable();
-			});
-		}
-
-		// Add a new column to the submission_files table if it doesn't exist
-		if (!Capsule::schema()->hasColumn('submission_files', 'original_file_name')) {
-			Capsule::schema()->table('submission_files', function (Blueprint $table) {
-				$table->string('original_file_name', 255)->nullable();
-			});
-		}
-
-		// Add a new column to the review_round_files table if it doesn't exist
-		if (!Capsule::schema()->hasColumn('review_round_files', 'file_id')) {
-			Capsule::schema()->table('review_round_files', function (Blueprint $table) {
-				$table->unsignedBigInteger('file_id')->nullable();
-			});
-		}
-		
-
-		// Add a new column to the review_round_files table if it doesn't exist
-		if (!Capsule::schema()->hasColumn('review_round_files', 'revision')) {
-			Capsule::schema()->table('review_round_files', function (Blueprint $table) {
-				$table->unsignedInteger('revision')->nullable();
-			});
-		}
-		
-
 		// Create entry in files and revisions tables for every submission_file
 		import('lib.pkp.classes.file.FileManager');
 		$fileManager = new FileManager();

@@ -18,12 +18,14 @@ use Illuminate\Database\Capsule\Manager as Capsule;
 use Illuminate\Database\PostgresConnection;
 use Illuminate\Database\Query\JoinClause;
 
-class PKPv3_3_0UpgradeMigration extends Migration {
+class PKPv3_3_0UpgradeMigration extends Migration
+{
 	/**
 	 * Run the migrations.
 	 * @return void
 	 */
-	public function up() {
+	public function up()
+	{
 		if (Capsule::schema()->hasColumn('submissions', 'locale')) {
 			Capsule::schema()->table('submissions', function (Blueprint $table) {
 				// pkp/pkp-lib#3572 Remove OJS 2.x upgrade tools (OPS doesn't have this)
@@ -138,7 +140,7 @@ class PKPv3_3_0UpgradeMigration extends Migration {
 					$table->string('locale', 14)->nullable();
 				});
 			}
-			
+
 			Capsule::table('submissions as s')
 				->join('publications as p', 'p.publication_id', '=', 's.current_publication_id')
 				->update(['s.locale' => Capsule::raw('p.locale')]);
@@ -205,7 +207,7 @@ class PKPv3_3_0UpgradeMigration extends Migration {
 			$locales = $row->locales;
 			if (empty($locales)) {
 				$locales = [];
-			} elseif (@unserialize($locales) !== false ) {
+			} elseif (@unserialize($locales) !== false) {
 				$locales = unserialize($locales);
 			} else {
 				$locales = json_decode($locales, true);
@@ -223,7 +225,8 @@ class PKPv3_3_0UpgradeMigration extends Migration {
 	 * Reverse the downgrades
 	 * @return void
 	 */
-	public function down() {
+	public function down()
+	{
 		throw new PKP\install\DowngradeNotSupportedException();
 	}
 
@@ -231,7 +234,8 @@ class PKPv3_3_0UpgradeMigration extends Migration {
 	 * @return void
 	 * @brief populate email templates with new records for workflow stage id
 	 */
-	private function _populateEmailTemplates() {
+	private function _populateEmailTemplates()
+	{
 		$xmlDao = new XMLDAO();
 		$emailTemplateDao = DAORegistry::getDAO('EmailTemplateDAO');
 		$data = $xmlDao->parseStruct($emailTemplateDao->getMainEmailTemplatesFilename(), array('email'));
@@ -247,7 +251,8 @@ class PKPv3_3_0UpgradeMigration extends Migration {
 	 * @return void
 	 * @brief make remoteUrl navigation item type multilingual and drop the url column
 	 */
-	private function _makeRemoteUrlLocalizable() {
+	private function _makeRemoteUrlLocalizable()
+	{
 		$contextService = Services::get('context');
 		$contextIds = $contextService->getIds();
 		foreach ($contextIds as $contextId) {
@@ -307,7 +312,8 @@ class PKPv3_3_0UpgradeMigration extends Migration {
 	 *
 	 * @see pkp/pkp-lib#6057
 	 */
-	private function _migrateSubmissionFiles() {
+	private function _migrateSubmissionFiles()
+	{
 		import('lib.pkp.classes.submission.SubmissionFile'); // SUBMISSION_FILE_ constants
 
 		// pkp/pkp-lib#6616 Delete submission_files entries that correspond to nonexistent submissions
@@ -324,13 +330,18 @@ class PKPv3_3_0UpgradeMigration extends Migration {
 			}
 		} elseif (Capsule::connection()->getDriverName() === 'pgsql') {
 			if (Capsule::schema()->hasTable('event_log_settings')) {
-				Capsule::schema()->table('event_log_settings', function (Blueprint $table) { $table->dropIndex('event_log_settings_name_value'); });
+				Capsule::schema()->table('event_log_settings', function (Blueprint $table) {
+					$table->dropIndex('event_log_settings_name_value'); });
 			}
 		}
 
 		switch (Capsule::connection()->getDriverName()) {
-			case 'mysql': Capsule::connection()->unprepared('CREATE INDEX event_log_settings_name_value ON event_log_settings (setting_name(50), setting_value(150))'); break;
-			case 'pgsql': Capsule::connection()->unprepared("CREATE INDEX event_log_settings_name_value ON event_log_settings (setting_name, setting_value) WHERE setting_name IN ('fileId', 'submissionId')"); break;
+			case 'mysql':
+				Capsule::connection()->unprepared('CREATE INDEX event_log_settings_name_value ON event_log_settings (setting_name(50), setting_value(150))');
+				break;
+			case 'pgsql':
+				Capsule::connection()->unprepared("CREATE INDEX event_log_settings_name_value ON event_log_settings (setting_name, setting_value) WHERE setting_name IN ('fileId', 'submissionId')");
+				break;
 		}
 
 		// Create a new table to track files in file storage
@@ -353,13 +364,24 @@ class PKPv3_3_0UpgradeMigration extends Migration {
 
 		// Add columns to submission_files table
 		Capsule::schema()->table('submission_files', function (Blueprint $table) {
-			$table->unsignedBigInteger('new_file_id')->nullable(); // Renamed and made not nullable at the end of the migration
+			if (!Capsule::schema()->hasColumn('submission_files', 'new_file_id')) {
+				$table->unsignedBigInteger('new_file_id')->nullable(); // Renamed and made not nullable at the end of the migration
+			}
 		});
 
 		// Drop unique keys that will cause trouble while we're migrating
-		Capsule::schema()->table('review_round_files', function (Blueprint $table) {
-			$table->dropIndex('review_round_files_pkey');
-		});
+		// Capsule::connection()->unprepared('DROP INDEX review_round_files_pkey ON review_round_files');
+		$databaseName = Capsule::connection()->getDatabaseName();
+
+		$indexExists = Capsule::table('information_schema.statistics')
+			->where('table_schema', $databaseName)
+			->where('table_name', 'review_round_files')
+			->where('index_name', 'review_round_files_pkey')
+			->exists();
+
+		if ($indexExists) {
+			Capsule::connection()->unprepared('DROP INDEX review_round_files_pkey ON review_round_files');
+		}
 
 		// Create entry in files and revisions tables for every submission_file
 		import('lib.pkp.classes.file.FileManager');
@@ -551,7 +573,7 @@ class PKPv3_3_0UpgradeMigration extends Migration {
 		// Update file name of dependent files, see: pkp/pkp-lib#6801
 		Capsule::table('submission_files')
 			->select('file_id', 'original_file_name')
-			->where('file_stage' , '=', SUBMISSION_FILE_DEPENDENT)
+			->where('file_stage', '=', SUBMISSION_FILE_DEPENDENT)
 			->chunkById(1000, function ($dependentFiles) {
 				foreach ($dependentFiles as $dependentFile) {
 					Capsule::table('submission_file_settings')
@@ -658,23 +680,24 @@ class PKPv3_3_0UpgradeMigration extends Migration {
 	 * @param int $fileStage ONe of SUBMISSION_FILE_ constants
 	 * @return string
 	 */
-	private function _fileStageToPath($fileStage) {
+	private function _fileStageToPath($fileStage)
+	{
 		import('lib.pkp.classes.submission.SubmissionFile');
 		static $fileStagePathMap = [
-			SUBMISSION_FILE_SUBMISSION => 'submission',
-			SUBMISSION_FILE_NOTE => 'note',
-			SUBMISSION_FILE_REVIEW_FILE => 'submission/review',
-			SUBMISSION_FILE_REVIEW_ATTACHMENT => 'submission/review/attachment',
-			SUBMISSION_FILE_REVIEW_REVISION => 'submission/review/revision',
-			SUBMISSION_FILE_FINAL => 'submission/final',
-			7 /* SUBMISSION_FILE_FAIR_COPY */ => 'submission/fairCopy',
-			8 /* SUBMISSION_FILE_EDITOR */ => 'submission/editor',
-			SUBMISSION_FILE_COPYEDIT => 'submission/copyedit',
-			SUBMISSION_FILE_DEPENDENT => 'submission/proof',
-			SUBMISSION_FILE_PROOF => 'submission/proof',
-			SUBMISSION_FILE_PRODUCTION_READY => 'submission/productionReady',
-			SUBMISSION_FILE_ATTACHMENT => 'attachment',
-			SUBMISSION_FILE_QUERY => 'submission/query',
+		SUBMISSION_FILE_SUBMISSION => 'submission',
+		SUBMISSION_FILE_NOTE => 'note',
+		SUBMISSION_FILE_REVIEW_FILE => 'submission/review',
+		SUBMISSION_FILE_REVIEW_ATTACHMENT => 'submission/review/attachment',
+		SUBMISSION_FILE_REVIEW_REVISION => 'submission/review/revision',
+		SUBMISSION_FILE_FINAL => 'submission/final',
+		7 /* SUBMISSION_FILE_FAIR_COPY */ => 'submission/fairCopy',
+		8 /* SUBMISSION_FILE_EDITOR */ => 'submission/editor',
+		SUBMISSION_FILE_COPYEDIT => 'submission/copyedit',
+		SUBMISSION_FILE_DEPENDENT => 'submission/proof',
+		SUBMISSION_FILE_PROOF => 'submission/proof',
+		SUBMISSION_FILE_PRODUCTION_READY => 'submission/productionReady',
+		SUBMISSION_FILE_ATTACHMENT => 'attachment',
+		SUBMISSION_FILE_QUERY => 'submission/query',
 		];
 
 		if (!isset($fileStagePathMap[$fileStage])) {
@@ -694,7 +717,8 @@ class PKPv3_3_0UpgradeMigration extends Migration {
 	 *
 	 * @return void
 	 */
-	private function _fixCapitalCustomBlockTitles() {
+	private function _fixCapitalCustomBlockTitles()
+	{
 		$rows = Capsule::table('plugin_settings')
 			->where('plugin_name', 'customblockmanagerplugin')
 			->where('setting_name', 'blocks')
@@ -728,7 +752,8 @@ class PKPv3_3_0UpgradeMigration extends Migration {
 	 *
 	 * @see https://github.com/pkp/pkp-lib/issues/5619
 	 */
-	private function _createCustomBlockTitles() {
+	private function _createCustomBlockTitles()
+	{
 		$contextDao = \Application::get()->getContextDAO();
 
 		$rows = Capsule::table('plugin_settings')

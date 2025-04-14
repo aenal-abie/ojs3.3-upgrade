@@ -606,7 +606,7 @@ class PKPv3_3_0UpgradeMigration extends Migration
 		// Update columns in related tables
 		Capsule::schema()->table('review_round_files', function (Blueprint $table) {
 			$table->renameColumn('file_id', 'submission_file_id');
-			$table->dropColumn('revision');
+			// $table->dropColumn('revision');
 		});
 		Capsule::schema()->table('review_round_files', function (Blueprint $table) {
 			$table->bigInteger('submission_file_id')->nullable(false)->unique()->unsigned()->change();

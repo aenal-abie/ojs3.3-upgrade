@@ -318,7 +318,7 @@ class PKPv3_3_0UpgradeMigration extends Migration
 		// Add partial index (DBMS-specific)
 		if (Capsule::connection()->getDriverName() === 'mysql') {
 			if (Capsule::schema()->hasTable('event_log_settings')) {
-				Capsule::connection()->unprepared('DROP INDEX event_log_settings_name_value ON event_log_settings');
+				// Capsule::connection()->unprepared('DROP INDEX event_log_settings_name_value ON event_log_settings');
 			}
 		} elseif (Capsule::connection()->getDriverName() === 'pgsql') {
 			if (Capsule::schema()->hasTable('event_log_settings')) {

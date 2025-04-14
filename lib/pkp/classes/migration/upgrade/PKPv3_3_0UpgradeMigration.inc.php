@@ -323,7 +323,8 @@ class PKPv3_3_0UpgradeMigration extends Migration
 		} elseif (Capsule::connection()->getDriverName() === 'pgsql') {
 			if (Capsule::schema()->hasTable('event_log_settings')) {
 				Capsule::schema()->table('event_log_settings', function (Blueprint $table) {
-					$table->dropIndex('event_log_settings_name_value'); });
+					// $table->dropIndex('event_log_settings_name_value'); 
+				});
 			}
 		}
 

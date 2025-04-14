@@ -146,7 +146,7 @@ class PKPv3_3_0UpgradeMigration extends Migration
 		$this->_migrateSubmissionFiles();
 
 		$this->_fixCapitalCustomBlockTitles();
-		$this->_createCustomBlockTitles();
+		//$this->_createCustomBlockTitles();
 
 		// Remove item views related to submission files and notes,
 		// and convert the assoc_id to an integer

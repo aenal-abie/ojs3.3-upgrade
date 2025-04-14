@@ -110,6 +110,12 @@ class OJSv3_3_0UpgradeMigration extends Migration {
 					$this->_toJSON($row, 'review_form_element_settings', ['setting_name', 'locale', 'review_form_element_id'], 'setting_value');
 				});
 			} else {
+				if (!Capsule::schema()->hasColumn($tableName, 'locale')) {
+					Capsule::schema()->table($tableName, function (Blueprint $table) {
+						$table->string('locale', 5)->default('en_US')->index();
+					});
+				}
+
 				try {
 					$settings = Capsule::table($tableName, 's')->where('setting_type', 'object')->get(['setting_name', 'setting_value', 's.*']);
 				} catch (Exception $e) {

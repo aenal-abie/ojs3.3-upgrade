@@ -610,7 +610,7 @@ class PKPv3_3_0UpgradeMigration extends Migration
 		});
 		Capsule::schema()->table('review_round_files', function (Blueprint $table) {
 			$table->bigInteger('submission_file_id')->nullable(false)->unique()->unsigned()->change();
-			$table->unique(['submission_id', 'review_round_id', 'submission_file_id'], 'review_round_files_pkey');
+			// $table->unique(['submission_id', 'review_round_id', 'submission_file_id'], 'review_round_files_pkey');
 			$table->foreign('submission_file_id')->references('submission_file_id')->on('submission_files');
 		});
 		Capsule::schema()->table('review_files', function (Blueprint $table) {

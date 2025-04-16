@@ -53,9 +53,26 @@
 	{assign var=submissionDatePublished value=$publication->getData('datePublished')}
 	{if $showAuthor || $submissionPages || ($submissionDatePublished && $showDatePublished)}
 	<div class="meta">
-		{if $showAuthor}
+	{if $article->getAuthors()}
 		<div class="authors">
-			{$article->getAuthorString()|escape}
+			{foreach from=$article->getAuthors() item=author}
+			<div class="consent">
+				<b>{$author->getFullName()|escape},</b>
+				{if $author->getLocalizedAffiliation()}
+				&nbsp;{$author->getLocalizedAffiliation()|escape},
+				{/if}
+				{$authorAffiliation|escape}{if $author->getCountry()}
+				&nbsp;{$author->getCountryLocalized()|escape}{/if}
+			</div>
+			{if $author->getOrcid()}
+			<div class="orcid">
+				{$orcidIcon}
+				<a href="{$author->getOrcid()|escape}" target="_blank">
+					{$author->getOrcid()|escape}
+				</a>
+			</div>
+			{/if}
+			{/foreach}
 		</div>
 		{/if}
 
